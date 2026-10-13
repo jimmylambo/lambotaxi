@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>LamboTaxi — Conductor</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f2f2f7;--white:#fff;--text:#1c1c1e;--text2:#3a3a3c;--text3:#8e8e93;
+  --border:#e5e5ea;--border2:#c7c7cc;--accent:#007aff;--green:#34c759;
+  --red:#ff3b30;--amber:#ff9500;--purple:#af52de;--r:14px;--rsm:10px;
+  --sh:0 2px 12px rgba(0,0,0,.08);
+}
+html,body{min-height:100vh;background:var(--bg);font-family:-apple-system,'SF Pro Text',BlinkMacSystemFont,sans-serif;-webkit-font-smoothing:antialiased;color:var(--text);font-size:15px}
+
+/* ── Login ── */
+.login-wrap{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.login-logo{width:80px;height:80px;border-radius:20px;background:linear-gradient(160deg,#1a1a2e,#0f3460);display:flex;align-items:center;justify-content:center;font-size:36px;margin-bottom:20px;box-shadow:0 4px 20px rgba(0,0,0,.25)}
+.login-title{font-size:26px;font-weight:700;letter-spacing:-.5px;margin-bottom:4px}
+.login-sub{font-size:14px;color:var(--text3);margin-bottom:32px}
+.login-card{background:var(--white);border-radius:var(--r);padding:24px;width:100%;max-width:380px;box-shadow:var(--sh)}
+
+/* ── App ── */
+.app-header{background:var(--white);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;position:sticky;top:0;z-index:50}
+.app-header-title{font-size:17px;font-weight:700;display:flex;align-items:center;gap:8px}
+.driver-badge{font-size:12px;background:var(--accent);color:#fff;padding:3px 10px;border-radius:20px;font-weight:500}
+
+/* ── Tab bar ── */
+.tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr 1fr;height:58px;padding-bottom:env(safe-area-inset-bottom,0);z-index:50}
+.tab-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;font-weight:500;color:var(--text3);border:none;background:none;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:color .15s}
+.tab-btn.active{color:var(--accent)}
+.tab-btn svg{width:22px;height:22px}
+
+/* ── Content ── */
+.content{padding:14px 14px 80px}
+
+/* ── Cards ── */
+.card{background:var(--white);border-radius:var(--r);padding:16px 15px;margin-bottom:12px;box-shadow:var(--sh)}
+.card-title{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:14px}
+
+/* ── Form ── */
+.fg{margin-bottom:12px}
+.fl{display:block;font-size:11.5px;font-weight:500;color:var(--text2);margin-bottom:5px}
+.fi{width:100%;padding:12px 13px;border:1.5px solid var(--border);border-radius:var(--rsm);font-size:16px;font-family:inherit;color:var(--text);background:var(--bg);outline:none;-webkit-appearance:none;transition:border-color .15s}
+.fi:focus{border-color:var(--accent);background:var(--white)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+textarea.fi{resize:none;line-height:1.5}
+
+/* ── Buttons ── */
+.btn-primary{width:100%;padding:15px;border-radius:980px;border:none;background:var(--accent);color:#fff;font-size:17px;font-weight:600;font-family:inherit;cursor:pointer;-webkit-appearance:none;transition:opacity .15s}
+.btn-primary:active{opacity:.82}
+.btn-primary:disabled{opacity:.45}
+.btn-sec{padding:9px 18px;border-radius:980px;border:1.5px solid var(--border2);background:var(--white);color:var(--text);font-size:13.5px;font-weight:500;font-family:inherit;cursor:pointer}
+
+/* ── Tipo combustible pills ── */
+.fuel-pills{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px}
+.fpill{padding:10px 4px;border:1.5px solid var(--border);border-radius:var(--rsm);text-align:center;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;background:var(--bg)}
+.fpill.active{border-color:var(--accent);background:rgba(0,122,255,.08);color:var(--accent)}
+
+/* ── Carrera items ── */
+.carrera-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.carrera-item:last-child{border-bottom:none}
+.carrera-num{width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.carrera-info{flex:1}
+.carrera-title{font-size:13.5px;font-weight:600}
+.carrera-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.carrera-amt{font-size:15px;font-weight:700;color:var(--green)}
+
+/* ── KPI ── */
+.krow{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.kitem{background:var(--bg);border-radius:var(--rsm);padding:12px;border:1px solid var(--border);text-align:center}
+.kitem-val{font-size:20px;font-weight:700}
+.kitem-lbl{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:var(--text3);margin-top:2px}
+
+/* ── Historial ── */
+.hist-card{background:var(--bg);border-radius:var(--rsm);padding:12px;margin-bottom:8px;border:1px solid var(--border)}
+.hist-date{font-size:13.5px;font-weight:600;margin-bottom:6px}
+.hist-row{display:flex;justify-content:space-between;font-size:12.5px;color:var(--text2);margin-bottom:3px}
+
+/* ── Date nav ── */
+.date-nav{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.date-nav button{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--border2);background:var(--white);font-size:18px;cursor:pointer;color:var(--accent)}
+.date-label{flex:1;text-align:center}
+.date-main{font-size:16px;font-weight:700}
+.date-sub{font-size:11.5px;color:var(--text3);margin-top:1px}
+
+/* ── File upload ── */
+.fup-area{border:1.5px dashed var(--border2);border-radius:var(--rsm);padding:14px;background:var(--bg);display:flex;align-items:center;gap:10px;cursor:pointer}
+.fup-area:active{background:rgba(0,122,255,.05)}
+.flist{margin-top:6px}
+.flist-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(0,122,255,.06);border-radius:8px;margin-top:5px;font-size:12.5px;color:var(--accent)}
+
+/* ── Toast ── */
+.toast{position:fixed;bottom:74px;left:50%;transform:translateX(-50%) translateY(10px);background:#1c1c1e;color:#fff;padding:10px 20px;border-radius:980px;font-size:13.5px;font-weight:500;opacity:0;transition:all .25s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── Status saved ── */
+.status-saved{background:rgba(52,199,89,.1);border:1px solid rgba(52,199,89,.3);border-radius:var(--rsm);padding:9px 13px;font-size:13px;color:#1b7a4c;margin-bottom:12px;text-align:center;display:none}
+
+/* ── Spinner ── */
+.spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .65s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.err{font-size:12.5px;color:var(--red);margin-top:6px;display:none}
+
+@media(prefers-color-scheme:dark){
+  :root{--bg:#1c1c1e;--white:#2c2c2e;--text:#fff;--text2:#ebebf5;--text3:#8e8e93;--border:#3a3a3c;--border2:#48484a}
+  .fpill{background:var(--bg);color:var(--text2)}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-logo">🚕</div>
+  <div class="login-title">LamboTaxi</div>
+  <div class="login-sub">Acceso conductores</div>
+  <div class="login-card">
+    <div class="fg"><label class="fl">Email</label><input class="fi" type="email" id="lEmail" placeholder="tu@email.com" autocapitalize="off"></div>
+    <div class="fg" style="margin-bottom:6px"><label class="fl">Contraseña</label><input class="fi" type="password" id="lPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="err" id="loginErr">Email o contraseña incorrectos</div>
+    <button class="btn-primary" id="btnLogin" onclick="doLogin()" style="margin-top:16px">Entrar</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="appWrap" style="display:none">
+  <div class="app-header">
+    <div class="app-header-title">
+      🚕 Mi jornada
+      <span class="driver-badge" id="driverBadge">—</span>
+    </div>
+    <button class="btn-sec" onclick="doLogout()" style="font-size:12px;padding:7px 13px">Salir</button>
+  </div>
+
+  <!-- TAB: REGISTRAR JORNADA -->
+  <div id="tabJornada" class="content">
+    <div class="date-nav">
+      <button onclick="changeDate(-1)">‹</button>
+      <div>
+        <div class="date-main" id="dateMain">Hoy</div>
+        <div class="date-sub" id="dateSub"></div>
+      </div>
+      <button onclick="changeDate(1)" id="btnNext">›</button>
+    </div>
+
+    <div class="status-saved" id="statusSaved">✅ Jornada guardada correctamente</div>
+
+    <!-- Horario -->
+    <div class="card">
+      <div class="card-title">🕐 Horario del turno</div>
+      <div class="row2">
+        <div class="fg" style="margin-bottom:0"><label class="fl">Hora inicio</label><input class="fi" type="time" id="fHoraInicio" oninput="calcDuracion()"></div>
+        <div class="fg" style="margin-bottom:0"><label class="fl">Hora fin</label><input class="fi" type="time" id="fHoraFin" oninput="calcDuracion()"></div>
+      </div>
+      <div id="durLabel" style="text-align:center;font-size:12.5px;color:var(--text3);margin-top:10px"></div>
+    </div>
+
+    <!-- Carreras -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:0">🚗 Carreras del turno</div>
+        <button class="btn-sec" style="font-size:12px;padding:6px 12px" onclick="addCarrera()">+ Añadir</button>
+      </div>
+      <div id="carrerasList"><div style="color:var(--text3);font-size:13px;text-align:center;padding:10px">Sin carreras aún</div></div>
+      <div id="carrerasResumen" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        <div class="row2" style="gap:8px">
+          <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:var(--green)" id="rTotal">—</div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Total carreras</div></div>
+          <div style="text-align:center"><div style="font-size:18px;font-weight:700;color:var(--amber)" id="rPropinas">—</div><div style="font-size:10px;color:var(--text3);text-transform:uppercase">Propinas</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Repostaje -->
+    <div class="card">
+      <div class="card-title">⛽ Repostaje</div>
+      <div class="fg">
+        <label class="fl">Tipo de combustible</label>
+        <div class="fuel-pills">
+          <div class="fpill active" onclick="selectFuel('gasolina',this)" id="fpGasolina">⛽ Gasolina</div>
+          <div class="fpill" onclick="selectFuel('glp',this)" id="fpGlp">🔵 GLP</div>
+          <div class="fpill" onclick="selectFuel('diesel',this)" id="fpDiesel">🛢️ Diésel</div>
+          <div class="fpill" onclick="selectFuel('electrico',this)" id="fpElectrico">⚡ Elec.</div>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label class="fl">Fecha repostaje</label><input class="fi" type="date" id="fFechaRepo"></div>
+        <div class="fg"><label class="fl">Km actuales del coche</label><input class="fi" type="number" id="fKmActual" placeholder="125000" inputmode="numeric"></div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label class="fl">Litros</label><input class="fi" type="number" id="fLitros" placeholder="40.0" step="0.1" inputmode="decimal" oninput="calcPrecioL()"></div>
+        <div class="fg"><label class="fl">Coste total (€)</label><input class="fi" type="number" id="fCoste" placeholder="58.50" step="0.01" inputmode="decimal" oninput="calcPrecioL()"></div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label class="fl">€/litro (calculado)</label><input class="fi" type="number" id="fPrecioL" placeholder="1.46" step="0.001" inputmode="decimal" readonly style="background:var(--bg);color:var(--text3)"></div>
+        <div class="fg"><label class="fl">Nombre gasolinera</label><input class="fi" type="text" id="fGasolinera" placeholder="Ej: Repsol Calle Mayor"></div>
+      </div>
+      <div id="kmDesdeUltimo" style="font-size:12.5px;color:var(--accent);margin-bottom:10px;display:none"></div>
+      <div class="fg" style="margin-bottom:0">
+        <label class="fl">Foto ticket / factura</label>
+        <div class="fup-area" onclick="document.getElementById('fTicketFile').click()">
+          <input type="file" id="fTicketFile" accept="image/*,.pdf" capture="environment" style="display:none" onchange="handleTicketFile(this)">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="var(--accent)" stroke-width="1.5"><path d="M4 16l4-8 3 6 2-4 3 6"/><circle cx="15" cy="5" r="2"/></svg>
+          <span style="font-size:13.5px;color:var(--text3)">📷 Subir foto del ticket o PDF</span>
+        </div>
+        <div class="flist" id="ticketFileList"></div>
+      </div>
+    </div>
+
+    <!-- Observaciones -->
+    <div class="card">
+      <div class="card-title">📝 Observaciones</div>
+      <textarea class="fi" id="fObs" rows="3" placeholder="Incidencias, notas del turno, kilometraje…"></textarea>
+    </div>
+
+    <button class="btn-primary" id="btnGuardar" onclick="guardarJornada()">💾 Guardar jornada</button>
+  </div>
+
+  <!-- TAB: HISTORIAL -->
+  <div id="tabHistorial" class="content" style="display:none">
+    <div id="weekKpis" class="krow"></div>
+    <div id="histList"><div style="color:var(--text3);font-size:13px;text-align:center;padding:24px">Cargando…</div></div>
+  </div>
+
+  <!-- TAB: PERFIL -->
+  <div id="tabPerfil" class="content" style="display:none">
+    <div class="card">
+      <div class="card-title">👤 Mi perfil</div>
+      <div style="text-align:center;padding:10px 0 18px">
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--accent);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;margin:0 auto 10px">🚕</div>
+        <div style="font-size:17px;font-weight:700" id="pNombre">—</div>
+        <div style="font-size:13px;color:var(--text3);margin-top:2px" id="pEmail">—</div>
+      </div>
+      <div style="border-top:1px solid var(--border);padding-top:14px">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px">
+          <span style="color:var(--text3)">Ciudad</span><span id="pCiudad" style="font-weight:500">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13.5px">
+          <span style="color:var(--text3)">Licencia</span><span id="pLicencia" style="font-weight:500">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13.5px">
+          <span style="color:var(--text3)">Tokens</span><span id="pTokens" style="font-weight:500;color:var(--green)">—</span>
+        </div>
+      </div>
+    </div>
+    <button class="btn-primary" onclick="doLogout()" style="background:var(--red)">Cerrar sesión</button>
+  </div>
+
+  <!-- Tab bar -->
+  <div class="tabbar">
+    <button class="tab-btn active" id="tn-jornada" onclick="switchTab('jornada')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      Jornada
+    </button>
+    <button class="tab-btn" id="tn-historial" onclick="switchTab('historial')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      Historial
+    </button>
+    <button class="tab-btn" id="tn-perfil" onclick="switchTab('perfil')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Perfil
+    </button>
+  </div>
+</div>
+
+<!-- Modal añadir carrera -->
+<div id="carreraOvl" onclick="if(event.target===this)closeCarreraModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end">
+  <div style="background:var(--white);border-radius:20px 20px 0 0;padding:24px 16px 36px;width:100%">
+    <div style="font-size:16px;font-weight:700;margin-bottom:16px">🚗 Nueva carrera</div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Fuente</label>
+        <select class="fi" id="cFuente" onchange="onCarreraFuenteChange()">
+          <option value="Calle">Calle</option>
+          <option value="Emisora">Emisora</option>
+          <option value="App">App</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Método de pago</label>
+        <select class="fi" id="cPago">
+          <option value="Tarjeta">Tarjeta</option>
+          <option value="Efectivo">Efectivo</option>
+          <option value="App">App</option>
+        </select>
+      </div>
+    </div>
+    <!-- Selector de App (solo visible si Fuente = App) -->
+    <div class="fg" id="cAppRow" style="display:none">
+      <label class="fl">¿Qué aplicación?</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button class="fpill active" onclick="selectApp('Uber',this)" id="appUber">🚗 Uber</button>
+        <button class="fpill" onclick="selectApp('Bolt',this)" id="appBolt">⚡ Bolt</button>
+        <button class="fpill" onclick="selectApp('Free Now',this)" id="appFreeNow">🔓 Free Now</button>
+        <button class="fpill" onclick="selectApp('Cabify',this)" id="appCabify">💜 Cabify</button>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Importe carrera (€)</label><input class="fi" type="number" id="cImporte" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+      <div class="fg"><label class="fl">Propina (€)</label><input class="fi" type="number" id="cPropina" placeholder="0.00" step="0.01" inputmode="decimal"></div>
+    </div>
+    <!-- Comisión: solo para Emisora, no para App (ya viene descontada) -->
+    <div class="fg" id="cComisionRow">
+      <label class="fl">% Comisión emisora</label>
+      <input class="fi" type="number" id="cComision" placeholder="0" step="1" min="0" max="100" inputmode="numeric">
+    </div>
+    <div id="cComisionInfo" style="font-size:12px;color:var(--amber);margin-top:-8px;margin-bottom:10px"></div>
+    <div id="cAppInfo" style="display:none;font-size:12.5px;color:var(--green);background:rgba(52,199,89,.08);border-radius:8px;padding:8px 12px;margin-bottom:10px">
+      ✅ Las Apps ya descuentan su comisión — el importe que introduces es lo que recibes
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="fpill" style="flex:1;padding:12px;border-radius:980px" onclick="closeCarreraModal()">Cancelar</button>
+      <button class="btn-primary" style="flex:2;border-radius:980px" onclick="saveCarrera()">Añadir carrera</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = window.location.origin;
+let token = null, user = null;
+let currentDate = new Date();
+let carreras = [];
+let fuelTipo = 'gasolina';
+let lastKm = null; // last known km for auto-distance calc
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function fmt(n){ return n==null?'—':(+n).toLocaleString('es-ES',{style:'currency',currency:'EUR',minimumFractionDigits:2}); }
+function toStr(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function isToday(d){ const t=new Date(); return toStr(d)===toStr(t); }
+function isFuture(d){ const t=new Date(); t.setHours(0,0,0,0); const c=new Date(d); c.setHours(0,0,0,0); return c>t; }
+const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MESES=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const MESES_C=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+function toast(msg, dur=2600){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),dur);
+}
+
+// ── Auth ──────────────────────────────────────────────────────────────────────
+async function doLogin(){
+  const email=document.getElementById('lEmail').value.trim();
+  const pass=document.getElementById('lPass').value;
+  if(!email||!pass){showLoginErr('Rellena todos los campos');return;}
+  const btn=document.getElementById('btnLogin');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try{
+    const res=await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password:pass})});
+    const data=await res.json();
+    if(res.ok){ token=data.token; user=data.user; localStorage.setItem('lt_cond_token',token); localStorage.setItem('lt_cond_user',JSON.stringify(user)); showApp(); }
+    else showLoginErr(data.message||'Email o contraseña incorrectos');
+  }catch{ showLoginErr('Error de conexión'); }
+  finally{ btn.disabled=false; btn.textContent='Entrar'; }
+}
+function showLoginErr(msg){ const el=document.getElementById('loginErr'); el.textContent=msg; el.style.display='block'; }
+function doLogout(){ localStorage.removeItem('lt_cond_token'); localStorage.removeItem('lt_cond_user'); token=null; user=null; document.getElementById('loginWrap').style.display='flex'; document.getElementById('appWrap').style.display='none'; }
+
+// ── App init ──────────────────────────────────────────────────────────────────
+function showApp(){
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('appWrap').style.display='block';
+  document.getElementById('driverBadge').textContent=user.nombre||user.email;
+  document.getElementById('pNombre').textContent=user.nombre||'—';
+  document.getElementById('pEmail').textContent=user.email||'—';
+  document.getElementById('pCiudad').textContent=user.ciudad||'—';
+  document.getElementById('pLicencia').textContent=user.licencia||'—';
+  document.getElementById('pTokens').textContent=user.tokens_left!=null?user.tokens_left+' tokens':'—';
+  updateDateUI();
+  loadJornada();
+  setDefaultDate();
+}
+
+function setDefaultDate(){
+  document.getElementById('fFechaRepo').value=toStr(currentDate);
+}
+
+// ── Date navigation ──────────────────────────────────────────────────────────
+function changeDate(dir){
+  const next=new Date(currentDate);
+  next.setDate(next.getDate()+dir);
+  if(isFuture(next)) return;
+  currentDate=next;
+  updateDateUI();
+  loadJornada();
+  document.getElementById('fFechaRepo').value=toStr(currentDate);
+}
+
+function updateDateUI(){
+  const main=document.getElementById('dateMain');
+  const sub=document.getElementById('dateSub');
+  const nextBtn=document.getElementById('btnNext');
+  const d=currentDate;
+  if(isToday(d)){ main.textContent='Hoy'; sub.textContent=`${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`; }
+  else { main.textContent=`${DIAS[d.getDay()]} ${d.getDate()} ${MESES_C[d.getMonth()]}`; sub.textContent=''; }
+  nextBtn.style.opacity=isFuture(new Date(d.getTime()+86400000))?'.3':'1';
+  nextBtn.disabled=isFuture(new Date(d.getTime()+86400000));
+}
+
+// ── Load / Save jornada ──────────────────────────────────────────────────────
+async function loadJornada(){
+  clearForm();
+  if(!token)return;
+  try{
+    const res=await fetch(`${API}/jornada`,{headers:{Authorization:'Bearer '+token}});
+    if(!res.ok)return;
+    const all=await res.json();
+    const j=all.find(x=>x.fecha===toStr(currentDate));
+    if(j){
+      document.getElementById('fHoraInicio').value=j.hora_inicio||'';
+      document.getElementById('fHoraFin').value=j.hora_fin||'';
+      document.getElementById('fObs').value=j.observaciones||'';
+      if(j.repostaje_l>0){
+        document.getElementById('fLitros').value=j.repostaje_l||'';
+        document.getElementById('fCoste').value=j.repostaje_e||'';
+        if(j.repostaje_l>0&&j.repostaje_e>0) document.getElementById('fPrecioL').value=(j.repostaje_e/j.repostaje_l).toFixed(3);
+      }
+      if(j.carreras) carreras=JSON.parse(j.carreras);
+      else carreras=[];
+      renderCarreras();
+      document.getElementById('statusSaved').style.display='block';
+      calcDuracion();
+    }
+    // Get last km for auto-distance
+    const sorted=all.filter(x=>x.km_actual>0).sort((a,b)=>b.fecha.localeCompare(a.fecha));
+    if(sorted.length) lastKm=sorted[0].km_actual;
+  }catch(e){ console.warn(e); }
+}
+
+function clearForm(){
+  carreras=[];
+  renderCarreras();
+  document.getElementById('statusSaved').style.display='none';
+  document.getElementById('durLabel').textContent='';
+  ['fHoraInicio','fHoraFin','fLitros','fCoste','fPrecioL','fGasolinera','fKmActual','fObs'].forEach(id=>{
+    const el=document.getElementById(id); if(el)el.value='';
+  });
+  document.getElementById('kmDesdeUltimo').style.display='none';
+  document.getElementById('ticketFileList').innerHTML='';
+}
+
+async function guardarJornada(){
+  const btn=document.getElementById('btnGuardar');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  const kmActual=parseInt(document.getElementById('fKmActual').value)||0;
+  const kmAnterior=lastKm||0;
+  try{
+    const res=await fetch(`${API}/jornada`,{
+      method:'POST',
+      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({
+        fecha: toStr(currentDate),
+        hora_inicio: document.getElementById('fHoraInicio').value||null,
+        hora_fin: document.getElementById('fHoraFin').value||null,
+        total_factura: carreras.reduce((s,c)=>s+(c.importe_final||c.importe),0),
+        propinas: carreras.reduce((s,c)=>s+(c.propina||0),0),
+        repostaje_l: parseFloat(document.getElementById('fLitros').value||0),
+        repostaje_e: parseFloat(document.getElementById('fCoste').value||0),
+        repostaje_tipo: fuelTipo,
+        km_actual: kmActual,
+        km_desde_ultimo: kmActual>0&&kmAnterior>0?kmActual-kmAnterior:0,
+        gasolinera: document.getElementById('fGasolinera').value||null,
+        observaciones: document.getElementById('fObs').value||null,
+        carreras: JSON.stringify(carreras),
+      })
+    });
+    const data=await res.json();
+    if(data.ok){
+      toast(data.action==='updated'?'✅ Jornada actualizada':'✅ Jornada guardada');
+      document.getElementById('statusSaved').style.display='block';
+      if(kmActual>0) lastKm=kmActual;
+    } else toast('❌ '+(data.error||'Error al guardar'));
+  }catch{ toast('Error de conexión'); }
+  finally{ btn.disabled=false; btn.textContent='💾 Guardar jornada'; }
+}
+
+// ── Carreras ─────────────────────────────────────────────────────────────────
+let selectedApp = 'Uber';
+const EMISORA_PCT = 20; // default, will be overridden by user settings if available
+
+function addCarrera(){
+  document.getElementById('cImporte').value='';
+  document.getElementById('cPropina').value='';
+  document.getElementById('cComision').value='';
+  document.getElementById('cComisionInfo').textContent='';
+  document.getElementById('cAppInfo').style.display='none';
+  document.getElementById('cFuente').value='Calle';
+  document.getElementById('cPago').value='Tarjeta';
+  selectedApp='Uber';
+  onCarreraFuenteChange();
+  const ovl=document.getElementById('carreraOvl');
+  ovl.style.display='flex';
+}
+function closeCarreraModal(){ document.getElementById('carreraOvl').style.display='none'; }
+
+function selectApp(app, el){
+  selectedApp=app;
+  document.querySelectorAll('#cAppRow .fpill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+  // Auto-set pago to App
+  document.getElementById('cPago').value='App';
+}
+
+function onCarreraFuenteChange(){
+  const fuente=document.getElementById('cFuente').value;
+  const appRow=document.getElementById('cAppRow');
+  const comRow=document.getElementById('cComisionRow');
+  const appInfo=document.getElementById('cAppInfo');
+  const comInfo=document.getElementById('cComisionInfo');
+
+  if(fuente==='App'){
+    appRow.style.display='block';
+    comRow.style.display='none';
+    appInfo.style.display='block';
+    comInfo.textContent='';
+    document.getElementById('cPago').value='App';
+  } else if(fuente==='Emisora'){
+    appRow.style.display='none';
+    comRow.style.display='block';
+    appInfo.style.display='none';
+    // Auto-fill emisora commission from user data if available
+    document.getElementById('cComision').value=EMISORA_PCT;
+    document.getElementById('cPago').value='App';
+    updateComisionInfo();
+  } else {
+    // Calle
+    appRow.style.display='none';
+    comRow.style.display='none';
+    appInfo.style.display='none';
+    comInfo.textContent='';
+  }
+}
+
+function updateComisionInfo(){
+  const imp=parseFloat(document.getElementById('cImporte').value||0);
+  const com=parseFloat(document.getElementById('cComision').value||0);
+  const info=document.getElementById('cComisionInfo');
+  if(imp>0&&com>0){
+    const desc=imp*com/100;
+    info.textContent=`-${com}% comisión: -${desc.toFixed(2)}€ → Recibes: ${(imp-desc).toFixed(2)}€`;
+  } else info.textContent='';
+}
+
+function saveCarrera(){
+  const importe=parseFloat(document.getElementById('cImporte').value||0);
+  if(!importe){ toast('Introduce el importe de la carrera'); return; }
+  const propina=parseFloat(document.getElementById('cPropina').value||0);
+  const fuente=document.getElementById('cFuente').value;
+  const pago=document.getElementById('cPago').value;
+
+  let fuenteReal=fuente;
+  let comision=0;
+  let importe_final=importe;
+
+  if(fuente==='App'){
+    fuenteReal=selectedApp; // Uber, Bolt, Free Now, Cabify
+    comision=0; // already deducted
+    importe_final=importe;
+  } else if(fuente==='Emisora'){
+    comision=parseFloat(document.getElementById('cComision').value||0);
+    importe_final=comision>0?parseFloat((importe*(1-comision/100)).toFixed(2)):importe;
+  }
+
+  carreras.push({id:Date.now(),fuente:fuenteReal,pago,importe,propina,comision,importe_final});
+  renderCarreras();
+  closeCarreraModal();
+  toast(`✅ ${fuenteReal} — ${importe_final.toFixed(2)}€`);
+}
+
+document.addEventListener('input', e=>{
+  if(e.target.id==='cComision'||e.target.id==='cImporte'){
+    updateComisionInfo();
+  }
+  if(e.target.id==='fKmActual'){
+    const km=parseInt(e.target.value||0);
+    const kdiv=document.getElementById('kmDesdeUltimo');
+    if(km>0&&lastKm>0&&km>lastKm){
+      kdiv.style.display='block';
+      kdiv.textContent=`📍 ${km-lastKm} km desde el último repostaje (último: ${lastKm.toLocaleString()} km)`;
+    } else { kdiv.style.display='none'; }
+  }
+});
+
+function renderCarreras(){
+  const el=document.getElementById('carrerasList');
+  const res=document.getElementById('carrerasResumen');
+  if(!carreras.length){
+    el.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:10px">Sin carreras aún — toca "+ Añadir"</div>';
+    if(res)res.style.display='none';
+    return;
+  }
+  const total=carreras.reduce((s,c)=>s+(c.importe_final||c.importe),0);
+  const totalProp=carreras.reduce((s,c)=>s+(c.propina||0),0);
+  el.innerHTML=carreras.map((c,i)=>`
+    <div class="carrera-item">
+      <div class="carrera-num">${i+1}</div>
+      <div class="carrera-info">
+        <div class="carrera-title">${c.fuente} <span style="font-size:11px;color:var(--text3);font-weight:400">(${c.pago})</span></div>
+        <div class="carrera-sub">${c.importe}€ bruto${c.comision>0?` · -${c.comision}% comisión → <strong>${c.importe_final}€</strong>`:''}${c.propina>0?` · Propina: ${c.propina}€`:''}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div class="carrera-amt">${fmt(c.importe_final||c.importe)}</div>
+        <button onclick="removeCarrera(${i})" style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px;line-height:1">×</button>
+      </div>
+    </div>`).join('');
+  if(res){
+    res.style.display='block';
+    document.getElementById('rTotal').textContent=fmt(total);
+    document.getElementById('rPropinas').textContent=totalProp>0?fmt(totalProp):'—';
+  }
+}
+
+function removeCarrera(i){ carreras.splice(i,1); renderCarreras(); }
+
+// ── Fuel ──────────────────────────────────────────────────────────────────────
+function selectFuel(tipo, el){
+  fuelTipo=tipo;
+  document.querySelectorAll('.fpill').forEach(p=>p.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function calcPrecioL(){
+  const l=parseFloat(document.getElementById('fLitros').value||0);
+  const e=parseFloat(document.getElementById('fCoste').value||0);
+  if(l>0&&e>0) document.getElementById('fPrecioL').value=(e/l).toFixed(3);
+}
+
+function handleTicketFile(input){
+  const list=document.getElementById('ticketFileList');
+  list.innerHTML=[...input.files].map(f=>`<div class="flist-item">📎 ${f.name.length>35?f.name.slice(0,33)+'…':f.name} <span style="margin-left:auto;color:var(--text3)">${(f.size/1024).toFixed(0)}KB</span></div>`).join('');
+}
+
+// ── Duracion ──────────────────────────────────────────────────────────────────
+function calcDuracion(){
+  const inicio=document.getElementById('fHoraInicio').value;
+  const fin=document.getElementById('fHoraFin').value;
+  const el=document.getElementById('durLabel');
+  if(!inicio||!fin){el.textContent='';return;}
+  const [hi,mi]=inicio.split(':').map(Number);
+  const [hf,mf]=fin.split(':').map(Number);
+  let mins=(hf*60+mf)-(hi*60+mi);
+  if(mins<0)mins+=1440;
+  el.textContent=`⏱ Duración: ${Math.floor(mins/60)}h ${mins%60}m`;
+}
+
+// ── Historial ─────────────────────────────────────────────────────────────────
+async function loadHistorial(){
+  const el=document.getElementById('histList');
+  el.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px">Cargando…</div>';
+  if(!token)return;
+  try{
+    const res=await fetch(`${API}/jornada`,{headers:{Authorization:'Bearer '+token}});
+    if(!res.ok){el.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center">Error al cargar</div>';return;}
+    const all=await res.json();
+    if(!all.length){el.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px">Sin jornadas registradas</div>';return;}
+
+    // Week stats
+    const now=new Date();
+    const startW=new Date(now); startW.setDate(now.getDate()-now.getDay()+1); startW.setHours(0,0,0,0);
+    const wj=all.filter(j=>new Date(j.fecha+'T12:00:00')>=startW);
+    const wTotal=wj.reduce((s,j)=>s+(j.total_factura||0)+(j.propinas||0),0);
+    document.getElementById('weekKpis').innerHTML=`
+      <div class="kitem"><div class="kitem-val" style="color:var(--green)">${fmt(wTotal)}</div><div class="kitem-lbl">Esta semana</div></div>
+      <div class="kitem"><div class="kitem-val" style="color:var(--accent)">${wj.length}</div><div class="kitem-lbl">Jornadas</div></div>`;
+
+    el.innerHTML=all.slice(0,30).map(j=>{
+      const d=new Date(j.fecha+'T12:00:00');
+      const fechaStr=`${DIAS[d.getDay()]} ${d.getDate()} ${MESES_C[d.getMonth()]} ${d.getFullYear()}`;
+      const total=(j.total_factura||0)+(j.propinas||0);
+      const horas=j.hora_inicio&&j.hora_fin?calcHoras(j.hora_inicio,j.hora_fin):'';
+      let carrsList=[];
+      try{ if(j.carreras)carrsList=JSON.parse(j.carreras); }catch{}
+      return`<div class="hist-card">
+        <div class="hist-date">${fechaStr} ${horas?`<span style="font-size:11.5px;color:var(--text3);font-weight:400">· ${horas}</span>`:''}</div>
+        <div class="hist-row"><span>Facturado</span><strong style="color:var(--green)">${total>0?fmt(total):'—'}</strong></div>
+        ${carrsList.length?`<div class="hist-row"><span>Carreras</span><span>${carrsList.length}</span></div>`:''}
+        ${j.repostaje_l>0?`<div class="hist-row"><span>Repostaje</span><span style="color:var(--amber)">${j.repostaje_l}L · ${fmt(j.repostaje_e)} ${j.repostaje_tipo?'('+j.repostaje_tipo+')':''}</span></div>`:''}
+        ${j.km_actual>0?`<div class="hist-row"><span>Km</span><span>${j.km_actual.toLocaleString()} km${j.km_desde_ultimo>0?' (+'+j.km_desde_ultimo+')':''}</span></div>`:''}
+        ${j.observaciones?`<div style="font-size:12px;color:var(--text3);margin-top:4px">${j.observaciones.slice(0,80)}${j.observaciones.length>80?'…':''}</div>`:''}
+      </div>`;
+    }).join('');
+  }catch(e){ el.innerHTML='<div style="color:var(--text3);font-size:13px;text-align:center">Error al cargar historial</div>'; }
+}
+
+function calcHoras(inicio,fin){
+  const [hi,mi]=inicio.split(':').map(Number);
+  const [hf,mf]=fin.split(':').map(Number);
+  let mins=(hf*60+mf)-(hi*60+mi);
+  if(mins<0)mins+=1440;
+  return `${Math.floor(mins/60)}h ${mins%60}m`;
+}
+
+// ── Tabs ──────────────────────────────────────────────────────────────────────
+function switchTab(tab){
+  ['jornada','historial','perfil'].forEach(t=>{
+    document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1)).style.display=t===tab?'block':'none';
+    document.getElementById('tn-'+t).classList.toggle('active',t===tab);
+  });
+  if(tab==='historial')loadHistorial();
+}
+
+// ── Auto login ────────────────────────────────────────────────────────────────
+(()=>{
+  const t=localStorage.getItem('lt_cond_token');
+  const u=localStorage.getItem('lt_cond_user');
+  if(!t||!u)return;
+  token=t; user=JSON.parse(u);
+  fetch(`${API}/auth/me`,{headers:{Authorization:'Bearer '+t}})
+    .then(r=>r.ok?r.json():null)
+    .then(me=>{ if(me){user=me;showApp();}else doLogout(); })
+    .catch(()=>showApp());
+})();
+</script>
+</body>
+</html>

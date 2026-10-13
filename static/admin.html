@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LamboTaxi Admin</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{--accent:#007aff;--green:#34c759;--red:#ff3b30;--amber:#ff9500;--purple:#af52de;--bg:#f2f2f7;--white:#fff;--sidebar:#1c1c1e;--text:#1c1c1e;--text2:#3a3a3c;--text3:#8e8e93;--border:#e5e5ea;--r:12px;--sh:0 2px 12px rgba(0,0,0,.08)}
+  body{font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif;background:var(--bg);display:flex;min-height:100vh}
+  /* Sidebar */
+  .sidebar{width:220px;background:var(--sidebar);min-height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:100}
+  .slogo{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .slogo-title{color:#fff;font-size:17px;font-weight:700}
+  .slogo-sub{color:rgba(255,255,255,.4);font-size:11px;margin-top:2px}
+  .snav{flex:1;padding:12px 10px}
+  .nb{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:rgba(255,255,255,.6);font-size:13.5px;cursor:pointer;transition:all .15s;border:none;background:none;width:100%;text-align:left;margin-bottom:2px}
+  .nb:hover{background:rgba(255,255,255,.07);color:#fff}
+  .nb.active{background:var(--accent);color:#fff}
+  .nb svg{flex-shrink:0}
+  .sfoot{padding:16px;border-top:1px solid rgba(255,255,255,.08)}
+  .sfoot-user{color:rgba(255,255,255,.5);font-size:12px}
+  .sfoot-email{color:rgba(255,255,255,.8);font-size:11px;margin-top:2px}
+  .logout{display:block;margin-top:10px;padding:7px 12px;border-radius:8px;background:rgba(255,59,48,.15);color:var(--red);font-size:12.5px;font-weight:500;border:none;cursor:pointer;width:100%;text-align:left}
+  /* Main */
+  .main{margin-left:220px;flex:1;display:flex;flex-direction:column}
+  .topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between}
+  .topbar-title{font-size:18px;font-weight:700}
+  .content{padding:24px 28px;flex:1}
+  .page{display:none}
+  .page.active{display:block}
+  /* Cards */
+  .card{background:var(--white);border-radius:var(--r);padding:20px 22px;box-shadow:var(--sh);margin-bottom:16px}
+  .card-title{font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+  /* KPI grid */
+  .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+  .kcard{background:var(--white);border-radius:var(--r);padding:18px 20px;box-shadow:var(--sh);border-left:4px solid var(--border)}
+  .kcard.accent{border-left-color:var(--accent)}
+  .kcard.green{border-left-color:var(--green)}
+  .kcard.amber{border-left-color:var(--amber)}
+  .kcard.red{border-left-color:var(--red)}
+  .klbl{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--text3);margin-bottom:6px;font-weight:500}
+  .kval{font-size:26px;font-weight:700}
+  /* Table */
+  .table-wrap{overflow-x:auto}
+  table{width:100%;border-collapse:collapse}
+  th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text3);border-bottom:2px solid var(--border)}
+  td{padding:11px 14px;font-size:13.5px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:var(--bg)}
+  /* Badges */
+  .badge{padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:500}
+  .badge-pending{background:rgba(255,149,0,.1);color:var(--amber)}
+  .badge-active{background:rgba(52,199,89,.1);color:#1b7a4c}
+  .badge-blocked{background:rgba(255,59,48,.1);color:var(--red)}
+  .badge-admin{background:rgba(0,122,255,.1);color:var(--accent)}
+  /* Buttons */
+  .btn{padding:7px 14px;border-radius:8px;border:none;font-size:13px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .15s}
+  .btn:hover{opacity:.82}
+  .btn-p{background:var(--accent);color:#fff}
+  .btn-g{background:var(--bg);color:var(--text);border:1px solid var(--border)}
+  .btn-r{background:rgba(255,59,48,.1);color:var(--red)}
+  .btn-green{background:rgba(52,199,89,.1);color:var(--green)}
+  .btn-sm{padding:5px 10px;font-size:12px}
+  /* Forms */
+  .fi{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:9px;font-size:13.5px;font-family:inherit;outline:none;background:var(--bg)}
+  .fi:focus{border-color:var(--accent);background:#fff}
+  .fg{margin-bottom:14px}
+  .fl{display:block;font-size:12px;font-weight:500;color:var(--text2);margin-bottom:5px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  /* Modal */
+  .ovl{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .ovl.open{display:flex}
+  .modal{background:var(--white);border-radius:16px;padding:28px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+  .modal-title{font-size:18px;font-weight:700;margin-bottom:4px}
+  .modal-sub{font-size:13px;color:var(--text3);margin-bottom:22px}
+  .mact{display:flex;gap:10px;margin-top:22px}
+  /* Alert */
+  .alert{padding:11px 14px;border-radius:9px;font-size:13px;margin-bottom:16px;display:none}
+  .alert.ok{background:rgba(52,199,89,.1);color:#1b7a4c;border:1px solid rgba(52,199,89,.2)}
+  .alert.err{background:rgba(255,59,48,.1);color:var(--red);border:1px solid rgba(255,59,48,.2)}
+  /* Config */
+  .cfg-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+  .cfg-label{font-size:13.5px;font-weight:500}
+  .cfg-sub{font-size:12px;color:var(--text3);margin-top:2px}
+  .cfg-input{width:200px}
+  /* Log */
+  .log-row{padding:9px 0;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;gap:12px}
+  .log-action{font-size:12px;font-weight:600;color:var(--accent);min-width:130px}
+  .log-detail{font-size:12.5px;color:var(--text2);flex:1}
+  .log-time{font-size:11px;color:var(--text3);min-width:140px;text-align:right}
+  /* Search */
+  .search-bar{display:flex;gap:10px;margin-bottom:16px;align-items:center}
+  .search-bar input{flex:1;padding:9px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:13.5px;font-family:inherit;outline:none}
+  .search-bar input:focus{border-color:var(--accent)}
+  select.fi{cursor:pointer}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="slogo">
+    <div class="slogo-title">🚕 LamboTaxi</div>
+    <div class="slogo-sub">Panel de Administración</div>
+  </div>
+  <nav class="snav">
+    <button class="nb active" onclick="goPage('dashboard',this)">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/></svg>Dashboard
+    </button>
+    <button class="nb" onclick="goPage('users',this)">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>Usuarios
+    </button>
+    <button class="nb" onclick="goPage('pending',this)">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg>Pendientes <span id="pendingBadge" style="background:var(--red);color:#fff;border-radius:20px;padding:1px 7px;font-size:11px;margin-left:auto"></span>
+    </button>
+    <button class="nb" onclick="goPage('tokens',this)">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg>Tokens
+    </button>
+    <button class="nb" onclick="goPage('config',this)">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>Configuración
+    </button>
+    <button class="nb" onclick="goPage('logs',this)">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>Actividad
+    </button>
+  </nav>
+  <div class="sfoot">
+    <div class="sfoot-user" id="adminName">Administrador</div>
+    <div class="sfoot-email" id="adminEmail">—</div>
+    <button class="logout" onclick="doLogout()">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:12px;color:var(--text3)" id="topbarTime"></span>
+      <a href="/app" target="_blank" style="font-size:12.5px;color:var(--accent);text-decoration:none">Ver app →</a>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="kgrid" id="statsGrid">
+        <div class="kcard accent"><div class="klbl">Total usuarios</div><div class="kval" id="st-total">—</div></div>
+        <div class="kcard amber"><div class="klbl">Pendientes</div><div class="kval" id="st-pending">—</div></div>
+        <div class="kcard green"><div class="klbl">Activos</div><div class="kval" id="st-active">—</div></div>
+        <div class="kcard red"><div class="klbl">Bloqueados</div><div class="kval" id="st-blocked">—</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Actividad reciente</div>
+        <div id="recentLog"><div style="color:var(--text3);font-size:13px">Cargando…</div></div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div class="search-bar">
+        <input type="text" id="userSearch" placeholder="Buscar por nombre o email…" oninput="filterUsers()">
+        <select class="btn btn-g" id="statusFilter" onchange="filterUsers()" style="padding:8px 12px">
+          <option value="">Todos</option>
+          <option value="active">Activos</option>
+          <option value="pending">Pendientes</option>
+          <option value="blocked">Bloqueados</option>
+        </select>
+        <button class="btn btn-p" onclick="loadUsers()">↻ Actualizar</button>
+        <button class="btn btn-p" onclick="openCreateUser()" style="background:var(--green)">+ Crear usuario</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap"><table id="usersTable">
+          <thead><tr>
+            <th>Usuario</th><th>Email</th><th>Ciudad</th><th>Estado</th><th>Tokens</th><th>Último acceso</th><th>Acciones</th>
+          </tr></thead>
+          <tbody id="usersBody"><tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">Cargando…</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- PENDING -->
+    <div class="page" id="page-pending">
+      <div class="card">
+        <div class="card-title">⏳ Solicitudes pendientes de aprobación</div>
+        <div id="pendingList"><div style="color:var(--text3);font-size:13px">Cargando…</div></div>
+      </div>
+    </div>
+
+    <!-- TOKENS -->
+    <div class="page" id="page-tokens">
+      <div class="card">
+        <div class="card-title">🪙 Gestión de tokens de acceso</div>
+        <p style="font-size:13.5px;color:var(--text2);margin-bottom:18px">Asigna tokens de acceso mensual a los usuarios. Sin tokens no pueden entrar a la app.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Usuario</th><th>Email</th><th>Estado</th><th>Tokens</th><th>Expira</th><th>Acción</th></tr></thead>
+          <tbody id="tokensBody"><tr><td colspan="6" style="text-align:center;color:var(--text3);padding:24px">Cargando…</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="page" id="page-config">
+      <div class="card">
+        <div class="card-title">⚙️ Parámetros de la aplicación</div>
+        <div id="configList"><div style="color:var(--text3);font-size:13px">Cargando…</div></div>
+        <div style="margin-top:20px">
+          <button class="btn btn-p" onclick="saveConfig()">Guardar cambios</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOGS -->
+    <div class="page" id="page-logs">
+      <div class="card">
+        <div class="card-title">📝 Registro de actividad</div>
+        <div id="logList"><div style="color:var(--text3);font-size:13px">Cargando…</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- USER MODAL -->
+<div class="ovl" id="userOvl" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-title" id="modalUserName">Usuario</div>
+    <div class="modal-sub" id="modalUserEmail">—</div>
+    <div id="modalAlert" class="alert"></div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Estado</label>
+        <select class="fi" id="mStatus">
+          <option value="active">✅ Activo</option>
+          <option value="pending">⏳ Pendiente</option>
+          <option value="blocked">🚫 Bloqueado</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Rol</label>
+        <select class="fi" id="mRole">
+          <option value="user">Usuario</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Tokens de acceso</label><input class="fi" type="number" id="mTokens" min="0" step="1"></div>
+      <div class="fg"><label class="fl">Expira el</label><input class="fi" type="date" id="mExpiry"></div>
+    </div>
+    <div class="fg"><label class="fl">Notas del admin</label><textarea class="fi" id="mNotes" rows="2" placeholder="Notas internas…"></textarea></div>
+    <div class="mact">
+      <button class="btn btn-g" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-r btn-sm" onclick="deleteUser(currentUserId)">Eliminar</button>
+      <button class="btn btn-p" onclick="saveUser()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOKENS MODAL -->
+<div class="ovl" id="tokenOvl" onclick="if(event.target===this)closeTokenModal()">
+  <div class="modal">
+    <div class="modal-title">Asignar tokens</div>
+    <div class="modal-sub" id="tokenUserName">—</div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Tokens a añadir</label><input class="fi" type="number" id="tTokens" value="30" min="1"></div>
+      <div class="fg"><label class="fl">Días de validez</label><input class="fi" type="number" id="tDays" value="30" min="1"></div>
+    </div>
+    <div id="tokenAlert" class="alert"></div>
+    <div class="mact">
+      <button class="btn btn-g" onclick="closeTokenModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="doAddTokens()">Asignar tokens</button>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE USER MODAL -->
+<div class="ovl" id="createUserOvl" onclick="if(event.target===this)closeCreateUser()">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">➕ Crear nuevo usuario</div>
+    <div class="modal-sub">El usuario podrá entrar directamente sin necesidad de registrarse</div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Nombre completo *</label><input class="fi" type="text" id="cuNombre" placeholder="Ej: Juan García"></div>
+      <div class="fg"><label class="fl">Ciudad</label><input class="fi" type="text" id="cuCiudad" placeholder="Madrid"></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Email *</label><input class="fi" type="email" id="cuEmail" placeholder="usuario@email.com"></div>
+      <div class="fg"><label class="fl">Contraseña *</label><input class="fi" type="password" id="cuPassword" placeholder="Mínimo 8 caracteres"></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Teléfono</label><input class="fi" type="tel" id="cuTelefono" placeholder="+34 600 000 000"></div>
+      <div class="fg"><label class="fl">Nº Licencia taxi</label><input class="fi" type="text" id="cuLicencia" placeholder="Ej: 04563"></div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Rol</label>
+        <select class="fi" id="cuRol">
+          <option value="user">Usuario</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Estado inicial</label>
+        <select class="fi" id="cuStatus">
+          <option value="active">Activo (acceso inmediato)</option>
+          <option value="pending">Pendiente de aprobación</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="fg"><label class="fl">Tokens de acceso</label><input class="fi" type="number" id="cuTokens" value="30" min="0"></div>
+      <div class="fg"><label class="fl">Vehículo (marca modelo)</label><input class="fi" type="text" id="cuVehiculo" placeholder="Ej: Toyota Corolla"></div>
+    </div>
+    <div class="fg"><label class="fl">Notas internas</label><textarea class="fi" id="cuNotas" rows="2" placeholder="Notas visibles solo para el admin…"></textarea></div>
+    <div id="cuAlert" class="alert" style="margin-bottom:10px"></div>
+    <div class="mact">
+      <button class="btn btn-g" onclick="closeCreateUser()">Cancelar</button>
+      <button class="btn btn-p" id="cuBtn" onclick="doCreateUser()">✓ Crear usuario</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = window.location.origin;
+let token = localStorage.getItem('lt_token');
+let users = [];
+let currentUserId = null;
+let tokenUserId = null;
+let configData = {};
+
+// ── Auth guard ────────────────────────────────────────────────────────────────
+async function init() {
+  if(!token) { window.location.href='/'; return; }
+  try {
+    const res = await apiFetch('/auth/me');
+    if(!res || res.role !== 'admin') { window.location.href='/'; return; }
+    document.getElementById('adminName').textContent = res.nombre;
+    document.getElementById('adminEmail').textContent = res.email;
+  } catch { window.location.href='/'; return; }
+  loadStats();
+  loadUsers();
+  loadPending();
+  loadConfig();
+  loadLogs();
+  setInterval(()=>{
+    const d=new Date();
+    document.getElementById('topbarTime').textContent=d.toLocaleTimeString('es-ES');
+  },1000);
+}
+
+async function apiFetch(path, method='GET', body=null) {
+  const opts = { method, headers: {'Authorization':'Bearer '+token, 'Content-Type':'application/json'} };
+  if(body) opts.body = JSON.stringify(body);
+  const res = await fetch(API+path, opts);
+  if(res.status===401||res.status===403) { window.location.href='/'; return null; }
+  return res.json();
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+const PAGE_TITLES = {dashboard:'Dashboard', users:'Usuarios', pending:'Pendientes', tokens:'Tokens', config:'Configuración', logs:'Actividad'};
+function goPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  document.getElementById('topbarTitle').textContent = PAGE_TITLES[id]||id;
+}
+
+// ── Stats ─────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  const data = await apiFetch('/admin/stats');
+  if(!data) return;
+  document.getElementById('st-total').textContent   = data.users.total;
+  document.getElementById('st-pending').textContent = data.users.pending;
+  document.getElementById('st-active').textContent  = data.users.active;
+  document.getElementById('st-blocked').textContent = data.users.blocked;
+  document.getElementById('pendingBadge').textContent = data.users.pending > 0 ? data.users.pending : '';
+  // Recent log
+  const logEl = document.getElementById('recentLog');
+  logEl.innerHTML = data.recent_activity.map(l=>`
+    <div class="log-row">
+      <div class="log-action">${l.action}</div>
+      <div class="log-detail">${l.detail||'—'}</div>
+      <div class="log-time">${new Date(l.created_at).toLocaleString('es-ES')}</div>
+    </div>`).join('') || '<div style="color:var(--text3);font-size:13px">Sin actividad</div>';
+}
+
+// ── Users ─────────────────────────────────────────────────────────────────────
+async function loadUsers() {
+  const data = await apiFetch('/admin/users');
+  if(!data) return;
+  users = data;
+  renderUsers(users);
+  renderTokens(users);
+}
+
+function renderUsers(list) {
+  const tbody = document.getElementById('usersBody');
+  if(!list.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:20px">Sin usuarios</td></tr>';return;}
+  tbody.innerHTML = list.map(u=>`<tr>
+    <td><strong>${u.nombre}</strong>${u.empresa?'<div style="font-size:11.5px;color:var(--text3)">'+u.empresa+'</div>':''}</td>
+    <td>${u.email}</td>
+    <td>${u.ciudad||'—'}</td>
+    <td><span class="badge badge-${u.status}">${{active:'Activo',pending:'Pendiente',blocked:'Bloqueado'}[u.status]||u.status}</span>${u.role==='admin'?'<span class="badge badge-admin" style="margin-left:4px">Admin</span>':''}</td>
+    <td><strong>${u.tokens_left}</strong>${u.tokens_expiry?'<div style="font-size:11px;color:var(--text3)">hasta '+new Date(u.tokens_expiry).toLocaleDateString('es-ES')+'</div>':''}</td>
+    <td>${u.last_login?new Date(u.last_login).toLocaleString('es-ES',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'Nunca'}</td>
+    <td style="white-space:nowrap">
+      <button class="btn btn-g btn-sm" onclick="openUserModal(${u.id})" style="margin-right:5px">Editar</button>
+      <button class="btn btn-green btn-sm" onclick="openTokenModal(${u.id})">Tokens</button>
+    </td>
+  </tr>`).join('');
+}
+
+function filterUsers() {
+  const q = document.getElementById('userSearch').value.toLowerCase();
+  const s = document.getElementById('statusFilter').value;
+  renderUsers(users.filter(u=>{
+    const matchQ = !q || u.nombre.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+    const matchS = !s || u.status === s;
+    return matchQ && matchS;
+  }));
+}
+
+// ── Pending ───────────────────────────────────────────────────────────────────
+async function loadPending() {
+  const data = await apiFetch('/admin/users?status=pending');
+  if(!data) return;
+  const el = document.getElementById('pendingList');
+  if(!data.length){el.innerHTML='<div style="text-align:center;padding:28px;color:var(--text3)">✅ Sin solicitudes pendientes</div>';return;}
+  el.innerHTML = data.map(u=>`
+    <div style="display:flex;align-items:center;gap:16px;padding:14px 0;border-bottom:1px solid var(--border)">
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:14px">${u.nombre} <span style="font-size:12px;color:var(--text3);font-weight:400">${u.ciudad||''}</span></div>
+        <div style="font-size:13px;color:var(--text3)">${u.email}${u.empresa?' · '+u.empresa:''}</div>
+        <div style="font-size:11.5px;color:var(--text3);margin-top:3px">Registrado: ${new Date(u.created_at).toLocaleString('es-ES')}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-r btn-sm" onclick="quickBlock(${u.id})">Denegar</button>
+        <button class="btn btn-p btn-sm" onclick="quickApprove(${u.id}, '${u.nombre}')">Aprobar</button>
+      </div>
+    </div>`).join('');
+}
+
+async function quickApprove(uid, name) {
+  const tokens = parseInt(prompt(`Tokens para ${name} (por defecto 30):`, '30') || '30');
+  const days   = parseInt(prompt('Días de acceso (por defecto 30):', '30') || '30');
+  const data   = await apiFetch(`/admin/users/${uid}/approve`, 'POST', {tokens, days});
+  if(data?.ok){ alert(data.message); loadPending(); loadUsers(); loadStats(); }
+}
+
+async function quickBlock(uid) {
+  if(!confirm('¿Denegar acceso a este usuario?')) return;
+  const data = await apiFetch(`/admin/users/${uid}/block`, 'POST');
+  if(data?.ok){ loadPending(); loadStats(); }
+}
+
+// ── User modal ────────────────────────────────────────────────────────────────
+// ── Create user ───────────────────────────────────────────────────────────────
+function openCreateUser(){
+  ['cuNombre','cuCiudad','cuEmail','cuPassword','cuTelefono','cuLicencia','cuVehiculo','cuNotas'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  document.getElementById('cuTokens').value='30';
+  document.getElementById('cuRol').value='user';
+  document.getElementById('cuStatus').value='active';
+  const al=document.getElementById('cuAlert'); if(al){al.textContent='';al.className='alert';}
+  document.getElementById('createUserOvl').classList.add('open');
+  setTimeout(()=>document.getElementById('cuNombre')?.focus(),100);
+}
+function closeCreateUser(){ document.getElementById('createUserOvl').classList.remove('open'); }
+
+async function doCreateUser(){
+  const nombre   = document.getElementById('cuNombre').value.trim();
+  const email    = document.getElementById('cuEmail').value.trim();
+  const password = document.getElementById('cuPassword').value;
+  const ciudad   = document.getElementById('cuCiudad').value.trim();
+  const telefono = document.getElementById('cuTelefono').value.trim();
+  const licencia = document.getElementById('cuLicencia').value.trim();
+  const vehiculo = document.getElementById('cuVehiculo').value.trim();
+  const notas    = document.getElementById('cuNotas').value.trim();
+  const rol      = document.getElementById('cuRol').value;
+  const status   = document.getElementById('cuStatus').value;
+  const tokens   = parseInt(document.getElementById('cuTokens').value)||30;
+  const al       = document.getElementById('cuAlert');
+
+  if(!nombre||!email||!password){
+    al.className='alert alert-error'; al.textContent='Nombre, email y contraseña son obligatorios.'; return;
+  }
+  if(password.length<8){
+    al.className='alert alert-error'; al.textContent='La contraseña debe tener al menos 8 caracteres.'; return;
+  }
+
+  document.getElementById('cuBtn').disabled=true;
+  document.getElementById('cuBtn').textContent='Creando…';
+
+  const data = await apiFetch('/admin/users/create','POST',{
+    nombre, email, password, ciudad, telefono,
+    licencia, vehiculo, notas, role: rol, status, tokens_left: tokens
+  });
+
+  document.getElementById('cuBtn').disabled=false;
+  document.getElementById('cuBtn').textContent='✓ Crear usuario';
+
+  if(data.ok||data.id){
+    al.className='alert alert-success';
+    al.textContent=`✅ Usuario ${nombre} creado correctamente.`;
+    loadUsers();
+    setTimeout(closeCreateUser, 1500);
+  } else {
+    al.className='alert alert-error';
+    al.textContent=data.error||data.message||'Error al crear el usuario.';
+  }
+}
+
+function openUserModal(uid) {
+  const u = users.find(x=>x.id===uid);
+  if(!u) return;
+  currentUserId = uid;
+  document.getElementById('modalUserName').textContent  = u.nombre;
+  document.getElementById('modalUserEmail').textContent = u.email;
+  document.getElementById('mStatus').value  = u.status;
+  document.getElementById('mRole').value    = u.role;
+  document.getElementById('mTokens').value  = u.tokens_left;
+  document.getElementById('mExpiry').value  = u.tokens_expiry ? u.tokens_expiry.split('T')[0] : '';
+  document.getElementById('mNotes').value   = u.notes || '';
+  document.getElementById('modalAlert').style.display = 'none';
+  document.getElementById('userOvl').classList.add('open');
+}
+function closeModal(){ document.getElementById('userOvl').classList.remove('open'); }
+
+async function saveUser() {
+  const data = await apiFetch(`/admin/users/${currentUserId}`, 'PUT', {
+    status:       document.getElementById('mStatus').value,
+    role:         document.getElementById('mRole').value,
+    tokens_left:  parseInt(document.getElementById('mTokens').value),
+    tokens_expiry:document.getElementById('mExpiry').value || null,
+    notes:        document.getElementById('mNotes').value
+  });
+  if(data?.ok){ showModalAlert('Guardado correctamente','ok'); loadUsers(); loadStats(); }
+  else showModalAlert(data?.error||'Error al guardar','err');
+}
+
+async function deleteUser(uid) {
+  if(!confirm('¿Eliminar este usuario y todos sus datos? Esta acción no se puede deshacer.')) return;
+  const data = await apiFetch(`/admin/users/${uid}`, 'DELETE');
+  if(data?.ok){ closeModal(); loadUsers(); loadStats(); alert('Usuario eliminado'); }
+}
+
+function showModalAlert(msg, type) {
+  const el = document.getElementById('modalAlert');
+  el.textContent = msg; el.className='alert '+type; el.style.display='block';
+}
+
+// ── Tokens ────────────────────────────────────────────────────────────────────
+function renderTokens(list) {
+  const tbody = document.getElementById('tokensBody');
+  tbody.innerHTML = list.filter(u=>u.role!=='admin').map(u=>`<tr>
+    <td><strong>${u.nombre}</strong></td>
+    <td>${u.email}</td>
+    <td><span class="badge badge-${u.status}">${{active:'Activo',pending:'Pendiente',blocked:'Bloqueado'}[u.status]}</span></td>
+    <td style="font-weight:600;color:${u.tokens_left>5?'var(--green)':'var(--red)'}">${u.tokens_left}</td>
+    <td>${u.tokens_expiry?new Date(u.tokens_expiry).toLocaleDateString('es-ES'):'—'}</td>
+    <td><button class="btn btn-p btn-sm" onclick="openTokenModal(${u.id})">+ Tokens</button></td>
+  </tr>`).join('');
+}
+
+function openTokenModal(uid) {
+  tokenUserId = uid;
+  const u = users.find(x=>x.id===uid);
+  document.getElementById('tokenUserName').textContent = u ? `${u.nombre} (${u.email})` : '';
+  document.getElementById('tTokens').value = '30';
+  document.getElementById('tDays').value   = '30';
+  document.getElementById('tokenAlert').style.display = 'none';
+  document.getElementById('tokenOvl').classList.add('open');
+}
+function closeTokenModal(){ document.getElementById('tokenOvl').classList.remove('open'); }
+
+async function doAddTokens() {
+  const tokens = parseInt(document.getElementById('tTokens').value);
+  const days   = parseInt(document.getElementById('tDays').value);
+  const data   = await apiFetch(`/admin/users/${tokenUserId}/tokens`, 'POST', {tokens, days});
+  if(data?.ok){
+    const el=document.getElementById('tokenAlert');
+    el.textContent=`✅ Tokens asignados. Total: ${data.tokens_left}`;
+    el.className='alert ok';el.style.display='block';
+    setTimeout(()=>{closeTokenModal();loadUsers();},1500);
+  }
+}
+
+// ── Config ────────────────────────────────────────────────────────────────────
+async function loadConfig() {
+  const data = await apiFetch('/admin/config');
+  if(!data) return;
+  configData = data;
+  const el = document.getElementById('configList');
+  el.innerHTML = Object.entries(data).map(([key,cfg])=>`
+    <div class="cfg-row">
+      <div><div class="cfg-label">${cfg.label||key}</div><div class="cfg-sub" style="color:var(--text3);font-size:11px">${key}</div></div>
+      ${cfg.type==='bool'
+        ? `<select class="fi cfg-input" id="cfg_${key}"><option value="true" ${cfg.value==='true'?'selected':''}>Sí</option><option value="false" ${cfg.value!=='true'?'selected':''}>No</option></select>`
+        : `<input class="fi cfg-input" type="${cfg.type==='number'?'number':'text'}" id="cfg_${key}" value="${cfg.value||''}">`}
+    </div>`).join('');
+}
+
+async function saveConfig() {
+  const updates = {};
+  Object.keys(configData).forEach(key=>{
+    const el=document.getElementById('cfg_'+key);
+    if(el) updates[key]=el.value;
+  });
+  const data = await apiFetch('/admin/config', 'POST', updates);
+  if(data?.ok) alert('✅ Configuración guardada');
+}
+
+// ── Logs ──────────────────────────────────────────────────────────────────────
+async function loadLogs() {
+  const data = await apiFetch('/admin/stats');
+  if(!data) return;
+  document.getElementById('logList').innerHTML = data.recent_activity.map(l=>`
+    <div class="log-row">
+      <div class="log-action">${l.action}</div>
+      <div class="log-detail">${l.detail||'—'}</div>
+      <div class="log-time">${new Date(l.created_at).toLocaleString('es-ES')}</div>
+    </div>`).join('') || '<div style="color:var(--text3)">Sin actividad</div>';
+}
+
+function doLogout() {
+  localStorage.removeItem('lt_token');
+  localStorage.removeItem('lt_user');
+  window.location.href='/';
+}
+
+init();
+</script>
+</body>
+</html>
